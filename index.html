@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>금민준 | 개인 홈페이지</title>
+  <style>
+    :root {
+      --bg: #f7f9fb;
+      --ink: #14213d;
+      --muted: #5b6577;
+      --line: #c9d3e0;
+      --accent: #1d4ed8;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: "Noto Sans KR", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+      line-height: 1.75;
+    }
+    main { max-width: 720px; margin: 0 auto; padding: 4rem 1.5rem 3rem; }
+    h1 { font-size: 2.8rem; margin: 0 0 .25rem; letter-spacing: -0.02em; }
+    .tagline { color: var(--muted); margin: 0 0 3rem; font-size: 1.1rem; }
+    h2 { font-size: 1.3rem; margin: 3rem 0 1rem; padding-bottom: .4rem; border-bottom: 2px solid var(--accent); }
+    dl { display: grid; grid-template-columns: 6rem 1fr; gap: .5rem 1rem; margin: 0; }
+    dt { color: var(--muted); }
+    dd { margin: 0; }
+    ul.career { list-style: none; margin: 0; padding: 0; }
+    ul.career li { display: grid; grid-template-columns: 9rem 1fr; gap: 1rem; padding: .9rem 0; border-bottom: 1px solid var(--line); }
+    ul.career .period { color: var(--muted); font-variant-numeric: tabular-nums; }
+    ul.career strong { display: block; }
+    a { color: var(--accent); }
+    a:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+    footer { margin-top: 4rem; color: var(--muted); font-size: .9rem; }
+    @media (max-width: 520px) {
+      h1 { font-size: 2.2rem; }
+      ul.career li { grid-template-columns: 1fr; gap: 0; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>금민준</h1>
+      <p class="tagline">국민대학교 학생</p>
+    </header>
+
+    <section id="about">
+      <h2>소개</h2>
+      <dl>
+        <dt>이름</dt><dd>금민준</dd>
+        <dt>소속</dt><dd>국민대학교</dd>
+        <dt>이메일</dt><dd><a href="mailto:geumminjun4@naver.com">geumminjun4@naver.com</a></dd>
+      </dl>
+      <p>안녕하세요. 웹 개발과 데이터 분석에 관심이 있는 금민준입니다. 배운 것을 직접 만들어 보며 익히는 것을 좋아합니다.</p>
+    </section>
+
+    <section id="career">
+      <h2>경력</h2>
+      <ul class="career">
+        <li>
+          <span class="period">2025.07 – 2025.12</span>
+          <span><strong>스타트업 웹 개발 인턴</strong>쇼핑몰 관리자 페이지 프런트엔드 개발에 참여 (HTML, CSS, JavaScript)</span>
+        </li>
+        <li>
+          <span class="period">2024.06 – 2024.08</span>
+          <span><strong>교내 해커톤 참가</strong>4인 팀으로 일정 관리 웹앱을 제작하고 발표</span>
+        </li>
+        <li>
+          <span class="period">2024.03 – 2024.12</span>
+          <span><strong>국민대학교 코딩 동아리 · 부회장</strong>신입 부원 대상 HTML/CSS 스터디 운영</span>
+        </li>
+        <li>
+          <span class="period">2023.03 – 현재</span>
+          <span><strong>국민대학교 · 재학</strong>학업 및 프로젝트 수행 중</span>
+        </li>
+      </ul>
+    </section>
+
+    <footer>
+      <p>&copy; 2026 금민준</p>
+    </footer>
+  </main>
+</body>
+</html>
