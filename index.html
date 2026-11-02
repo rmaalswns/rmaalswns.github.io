@@ -212,6 +212,50 @@
     /* ---------- Contact ---------- */
     .contact-row { display: flex; flex-wrap: wrap; gap: .8rem; }
 
+    /* ---------- Guestbook ---------- */
+    .gb-form {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 1.4rem;
+      box-shadow: var(--shadow);
+      margin-bottom: 1.8rem;
+    }
+    .gb-field { margin-bottom: 1rem; }
+    .gb-field:last-of-type { margin-bottom: 1.2rem; }
+    .gb-field label { display: block; font-weight: 600; font-size: .9rem; margin-bottom: .4rem; }
+    .gb-field input,
+    .gb-field textarea {
+      width: 100%;
+      background: var(--bg);
+      color: var(--ink);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: .7rem .9rem;
+      font-family: inherit;
+      font-size: .95rem;
+      resize: vertical;
+    }
+    .gb-field input:focus,
+    .gb-field textarea:focus { outline: none; border-color: var(--accent); }
+    .gb-status { font-size: .9rem; color: var(--muted); min-height: 1.3em; margin-top: .8rem; }
+    .gb-status.error { color: #dc2626; }
+    .gb-status.success { color: var(--accent); }
+
+    ul.gb-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 1rem; }
+    ul.gb-list li {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 1.1rem 1.3rem;
+      box-shadow: var(--shadow);
+    }
+    .gb-head { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; margin-bottom: .4rem; }
+    .gb-name { font-weight: 700; }
+    .gb-date { color: var(--muted); font-size: .82rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .gb-msg { margin: 0; color: var(--muted); white-space: pre-wrap; word-break: break-word; }
+    .gb-empty { color: var(--muted); font-size: .95rem; }
+
     /* ---------- Footer ---------- */
     footer {
       border-top: 1px solid var(--line);
@@ -251,6 +295,7 @@
         <a href="#skills">기술</a>
         <a href="#projects">프로젝트</a>
         <a href="#career">경력</a>
+        <a href="#guestbook">방명록</a>
         <a href="#contact">연락처</a>
       </div>
       <button class="theme-toggle" id="themeToggle" type="button" aria-label="테마 전환">🌙</button>
@@ -363,6 +408,28 @@
       </ul>
     </section>
 
+    <section class="reveal" id="guestbook">
+      <h2>방명록</h2>
+      <p>방문해 주셔서 감사합니다. 짧은 인사나 응원의 한마디를 남겨 주세요.</p>
+
+      <form class="gb-form" id="gbForm" novalidate>
+        <div class="gb-field">
+          <label for="gbName">이름</label>
+          <input type="text" id="gbName" name="name" maxlength="40" required placeholder="이름 또는 닉네임" autocomplete="name">
+        </div>
+        <div class="gb-field">
+          <label for="gbMessage">메시지</label>
+          <textarea id="gbMessage" name="message" rows="3" maxlength="500" required placeholder="남기고 싶은 말을 적어 주세요"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary" id="gbSubmit">✍️ 남기기</button>
+        <p class="gb-status" id="gbStatus" role="status" aria-live="polite"></p>
+      </form>
+
+      <ul class="gb-list" id="gbList">
+        <li class="gb-empty" id="gbLoading">방명록을 불러오는 중…</li>
+      </ul>
+    </section>
+
     <section class="reveal" id="contact">
       <h2>연락처</h2>
       <p>함께 이야기 나누고 싶은 것이 있다면 언제든 연락 주세요.</p>
@@ -416,6 +483,118 @@
         });
       }, { threshold: 0.12 });
       items.forEach(function (el) { observer.observe(el); });
+    })();
+  </script>
+
+  <!-- ---------- Guestbook (Supabase) ---------- -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    (function () {
+      // Supabase 공개 접속 정보 (publishable/anon 키는 브라우저 노출용 공개 키)
+      var SUPABASE_URL = 'https://jlgvmghzqxlajqsbffyn.supabase.co';
+      var SUPABASE_KEY = 'sb_publishable_zwy44Ip_6pEohrKqXBEt-Q_7-Go5nge';
+
+      var form = document.getElementById('gbForm');
+      var nameInput = document.getElementById('gbName');
+      var msgInput = document.getElementById('gbMessage');
+      var submitBtn = document.getElementById('gbSubmit');
+      var statusEl = document.getElementById('gbStatus');
+      var listEl = document.getElementById('gbList');
+
+      if (!window.supabase || !window.supabase.createClient) {
+        listEl.innerHTML = '<li class="gb-empty">방명록을 불러올 수 없습니다. 네트워크 연결을 확인해 주세요.</li>';
+        return;
+      }
+      var client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+      function setStatus(text, type) {
+        statusEl.textContent = text || '';
+        statusEl.className = 'gb-status' + (type ? ' ' + type : '');
+      }
+
+      function escapeHtml(s) {
+        return String(s)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
+
+      function formatDate(iso) {
+        try {
+          var d = new Date(iso);
+          return d.toLocaleString('ko-KR', {
+            year: 'numeric', month: '2-digit', day: '2-digit',
+            hour: '2-digit', minute: '2-digit'
+          });
+        } catch (e) { return ''; }
+      }
+
+      function render(rows) {
+        if (!rows || rows.length === 0) {
+          listEl.innerHTML = '<li class="gb-empty">아직 남겨진 방명록이 없어요. 첫 글을 남겨 주세요!</li>';
+          return;
+        }
+        listEl.innerHTML = rows.map(function (r) {
+          return '<li>' +
+            '<div class="gb-head">' +
+              '<span class="gb-name">' + escapeHtml(r.name) + '</span>' +
+              '<span class="gb-date">' + escapeHtml(formatDate(r.created_at)) + '</span>' +
+            '</div>' +
+            '<p class="gb-msg">' + escapeHtml(r.message) + '</p>' +
+          '</li>';
+        }).join('');
+      }
+
+      // 조회: 최신순으로 방명록 읽어오기
+      function loadGuestbook() {
+        client
+          .from('guestbook')
+          .select('name, message, created_at')
+          .order('created_at', { ascending: false })
+          .limit(100)
+          .then(function (res) {
+            if (res.error) {
+              console.error(res.error);
+              listEl.innerHTML = '<li class="gb-empty">방명록을 불러오지 못했습니다: ' + escapeHtml(res.error.message) + '</li>';
+              return;
+            }
+            render(res.data);
+          });
+      }
+
+      // 저장: 새 방명록 글 추가
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var name = nameInput.value.trim();
+        var message = msgInput.value.trim();
+
+        if (!name || !message) {
+          setStatus('이름과 메시지를 모두 입력해 주세요.', 'error');
+          return;
+        }
+
+        submitBtn.disabled = true;
+        setStatus('저장 중…');
+
+        client
+          .from('guestbook')
+          .insert({ name: name, message: message })
+          .then(function (res) {
+            submitBtn.disabled = false;
+            if (res.error) {
+              console.error(res.error);
+              setStatus('저장에 실패했습니다: ' + res.error.message, 'error');
+              return;
+            }
+            setStatus('방명록을 남겼어요. 감사합니다!', 'success');
+            form.reset();
+            loadGuestbook();
+          });
+      });
+
+      loadGuestbook();
     })();
   </script>
 </body>
