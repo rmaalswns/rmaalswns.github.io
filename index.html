@@ -35,7 +35,9 @@
     * { box-sizing: border-box; }
 
     html { scroll-behavior: smooth; font-size: 100%; transition: font-size .2s ease; }
-    html[data-fontsize="large"] { font-size: 125%; }
+    html[data-fontsize="lg1"] { font-size: 112%; }
+    html[data-fontsize="lg2"] { font-size: 125%; }
+    html[data-fontsize="lg3"] { font-size: 140%; }
 
     body {
       margin: 0;
@@ -486,21 +488,50 @@
     (function () {
       var root = document.documentElement;
       var btn = document.getElementById('fontToggle');
-      var saved = localStorage.getItem('fontsize'); // 'large' or null
-      var large = saved === 'large';
+      // 글씨 크기 단계: 0=기본(100%), 1=112%, 2=125%, 3=140%
+      var STEPS = [
+        { attr: null,  pct: 100 },
+        { attr: 'lg1', pct: 112 },
+        { attr: 'lg2', pct: 125 },
+        { attr: 'lg3', pct: 140 }
+      ];
+      var labelEl = btn.querySelector('[data-ko]'); // 버튼 안 텍스트 span
 
-      function apply(isLarge) {
-        if (isLarge) root.setAttribute('data-fontsize', 'large');
-        else root.removeAttribute('data-fontsize');
-        btn.setAttribute('aria-pressed', isLarge ? 'true' : 'false');
+      // 저장값 읽기: 숫자 단계(0~3) 우선, 과거 'large' 값은 2단계(125%)로 호환 매핑
+      var saved = localStorage.getItem('fontsize');
+      var step = 0;
+      if (saved === 'large') step = 2;
+      else {
+        var n = parseInt(saved, 10);
+        if (!isNaN(n) && n >= 0 && n < STEPS.length) step = n;
       }
-      apply(large);
+
+      function apply(s) {
+        var cfg = STEPS[s];
+        if (cfg.attr) root.setAttribute('data-fontsize', cfg.attr);
+        else root.removeAttribute('data-fontsize');
+        btn.setAttribute('aria-pressed', s > 0 ? 'true' : 'false');
+        // 버튼 레이블/도움말에 현재 배율 표시 (한/영 전환 시 언어 토글이 data-ko/data-en을 다시 써주므로
+        // 여기서는 기본 레이블 뒤에 배율만 덧붙여 표시)
+        if (labelEl) {
+          var base = root.getAttribute('lang') === 'en' ? 'Larger' : '큰 글씨';
+          labelEl.textContent = s > 0 ? base + ' ' + cfg.pct + '%' : base;
+        }
+        var help = root.getAttribute('lang') === 'en'
+          ? 'Larger text (' + cfg.pct + '%)'
+          : '큰 글씨로 보기 (' + cfg.pct + '%)';
+        btn.setAttribute('aria-label', help);
+      }
+      apply(step);
 
       btn.addEventListener('click', function () {
-        large = !large;
-        localStorage.setItem('fontsize', large ? 'large' : 'normal');
-        apply(large);
+        step = (step + 1) % STEPS.length;
+        localStorage.setItem('fontsize', String(step));
+        apply(step);
       });
+
+      // 언어가 바뀌면 현재 배율 표시를 새 언어로 다시 그린다
+      document.addEventListener('langchange', function () { apply(step); });
     })();
 
     // ---------- Language (Korean / English) toggle ----------
